@@ -80,6 +80,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Variables específicas del CMS */
+  --color-primary: #2271b1;      /* Azul WordPress por defecto */
+  --color-primary-hover: #135e96;
+  --color-secondary: #72aee6;
+  --color-accent: #f6f7f7;
+  --font-heading: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --border-radius: 4px;
 }
 
 .dark {
