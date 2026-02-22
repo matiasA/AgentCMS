@@ -1,0 +1,327 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// =========================================
+// USUARIOS Y AUTENTICACIÓN
+// =========================================
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  AUTHOR
+  CONTRIBUTOR
+  SUBSCRIBER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // hash bcrypt
+  role          UserRole  @default(SUBSCRIBER)
+  bio           String?   @db.Text
+  website       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  posts         Post[]
+  pages         Page[]
+  comments      Comment[]
+  sessions      Session[]
+  accounts      Account[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// =========================================
+// CONTENIDO — POSTS
+// =========================================
+
+enum PostStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  PRIVATE
+  TRASH
+}
+
+enum PostType {
+  POST
+  PAGE
+}
+
+model Post {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  content         Json       // Formato BlockNote JSON
+  contentText     String?    @db.Text // Texto plano para búsqueda y embeddings
+  excerpt         String?    @db.Text
+  status          PostStatus @default(DRAFT)
+  featuredImage   String?    // URL de imagen destacada
+  authorId        String
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // SEO
+  seoTitle        String?
+  seoDescription  String?
+  seoKeywords     String[]
+
+  // IA
+  aiSummary       String?    @db.Text
+  embedding       Unsupported("vector(1536)")? // Para búsqueda semántica
+
+  // Relaciones
+  author          User         @relation(fields: [authorId], references: [id])
+  categories      PostCategory[]
+  tags            PostTag[]
+  comments        Comment[]
+  revisions       PostRevision[]
+
+  @@map("posts")
+}
+
+model Page {
+  id            String     @id @default(cuid())
+  title         String
+  slug          String     @unique
+  content       Json
+  contentText   String?    @db.Text
+  status        PostStatus @default(DRAFT)
+  featuredImage String?
+  authorId      String
+  parentId      String?    // Para páginas anidadas
+  menuOrder     Int        @default(0)
+  template      String?    // Plantilla de página
+  publishedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  seoTitle        String?
+  seoDescription  String?
+
+  author    User   @relation(fields: [authorId], references: [id])
+  parent    Page?  @relation("PageParent", fields: [parentId], references: [id])
+  children  Page[] @relation("PageParent")
+
+  @@map("pages")
+}
+
+model PostRevision {
+  id        String   @id @default(cuid())
+  postId    String
+  content   Json
+  title     String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_revisions")
+}
+
+// =========================================
+// TAXONOMÍAS
+// =========================================
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String? @db.Text
+  parentId    String?
+  image       String?
+  count       Int     @default(0)
+
+  parent   Category?  @relation("CategoryParent", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryParent")
+  posts    PostCategory[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String? @db.Text
+  count       Int     @default(0)
+
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostCategory {
+  postId     String
+  categoryId String
+
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([postId, categoryId])
+  @@map("post_categories")
+}
+
+model PostTag {
+  postId String
+  tagId  String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+// =========================================
+// COMENTARIOS
+// =========================================
+
+enum CommentStatus {
+  APPROVED
+  PENDING
+  SPAM
+  TRASH
+}
+
+model Comment {
+  id        String        @id @default(cuid())
+  postId    String
+  authorId  String?       // null si es comentario de invitado
+  parentId  String?       // para respuestas anidadas
+  
+  // Datos del comentarista invitado
+  guestName    String?
+  guestEmail   String?
+  guestWebsite String?
+  
+  content   String        @db.Text
+  status    CommentStatus @default(PENDING)
+  
+  // IA
+  aiSpamScore    Float?   // 0-1, probabilidad de spam
+  aiToxicScore   Float?   // 0-1, probabilidad de contenido tóxico
+  
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author   User?     @relation(fields: [authorId], references: [id])
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+// =========================================
+// MEDIOS
+// =========================================
+
+model Media {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int      // bytes
+  url         String   // URL pública en CDN
+  width       Int?
+  height      Int?
+  alt         String?
+  caption     String?
+  description String?  @db.Text
+  uploadedById String?
+  createdAt   DateTime @default(now())
+
+  @@map("media")
+}
+
+// =========================================
+// MENÚS
+// =========================================
+
+model Menu {
+  id        String     @id @default(cuid())
+  name      String
+  location  String?    // primary, footer, etc.
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items MenuItem[]
+
+  @@map("menus")
+}
+
+model MenuItem {
+  id       String  @id @default(cuid())
+  menuId   String
+  parentId String?
+  label    String
+  url      String?
+  type     String  // post, page, category, custom
+  refId    String? // ID del recurso referenciado
+  target   String  @default("_self")
+  order    Int     @default(0)
+
+  menu     Menu      @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   MenuItem?  @relation("MenuItemParent", fields: [parentId], references: [id])
+  children MenuItem[] @relation("MenuItemParent")
+
+  @@map("menu_items")
+}
+
+// =========================================
+// CONFIGURACIÓN
+// =========================================
+
+model Setting {
+  key       String @id
+  value     String @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
