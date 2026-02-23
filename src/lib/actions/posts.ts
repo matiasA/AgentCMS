@@ -24,7 +24,7 @@ export async function createDraftPost() {
     return newPost;
 }
 
-export async function updatePost(id: string, data: { title?: string; content?: string; status?: PostStatus }) {
+export async function updatePost(id: string, data: { title?: string; content?: string; status?: PostStatus; seoTitle?: string; seoDescription?: string; featuredImage?: string }) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("No autorizado");
 
@@ -40,6 +40,20 @@ export async function updatePost(id: string, data: { title?: string; content?: s
             ...(slug && { slug }),
         },
     });
+
+    // Update embeddings asynchronously for Semantic Search
+    if (data.content) {
+        let textContent = "";
+        try {
+            const parsed = JSON.parse(data.content);
+            if (Array.isArray(parsed)) {
+                textContent = parsed.map(b => b.content ? b.content.map((c: any) => c.text).join("") : "").join("\n");
+            }
+        } catch (e) { /* ignore */ }
+
+        // This is safe to run in the background (fire and forget)
+        import("./semantic-search").then(m => m.updatePostEmbedding(id, textContent));
+    }
 
     revalidatePath("/wp-admin/posts");
     revalidatePath(`/wp-admin/posts/${id}`);

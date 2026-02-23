@@ -51,7 +51,7 @@ export default async function CommentsPage() {
                                             {comment.status === "SPAM" && <span className="ml-2 font-semibold text-[#d63638]">Spam</span>}
                                         </div>
                                         <p className="text-[#1d2327] mb-2">{comment.content}</p>
-                                        <CommentRowActions commentId={comment.id} currentStatus={comment.status} />
+                                        <CommentRowActions commentId={comment.id} currentStatus={comment.status} content={comment.content} />
                                     </td>
                                     <td className="px-4 py-3 align-top">
                                         <Link href={`/wp-admin/posts/${comment.postId}`} className="text-[#2271b1] hover:underline font-medium block">

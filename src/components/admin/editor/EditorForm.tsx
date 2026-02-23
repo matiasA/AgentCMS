@@ -7,8 +7,11 @@ import { syncTaxonomiesToPost, createCategory, createTag } from "@/lib/actions/t
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { PostStatus } from "@prisma/client";
 import { useRouter } from "next/navigation";
+import { generateSEO, generateImage } from "@/lib/actions/ai";
+import { toast } from "sonner";
 
 // Carga asíncrona del componente principal del editor para evitar inconsistencias de Hidratación (Hydration mismatch)
 // y errores de Window is not defined (SSR).
@@ -30,17 +33,54 @@ export default function EditorForm({ post, allCategories, allTags }: { post: any
     const [newTagName, setNewTagName] = useState("");
     const [showNewCatInput, setShowNewCatInput] = useState(false);
 
+    // SEO & AI State
+    const [seoTitle, setSeoTitle] = useState(post.seoTitle || "");
+    const [seoDescription, setSeoDescription] = useState(post.seoDescription || "");
+    const [featuredImage, setFeaturedImage] = useState(post.featuredImage || "");
+    const [isGeneratingSEO, setIsGeneratingSEO] = useState(false);
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
     const handleSave = useCallback(async (status: PostStatus = post.status) => {
         setIsSaving(true);
         try {
-            await updatePost(post.id, { title, content, status });
+            await updatePost(post.id, { title, content, status, seoTitle, seoDescription, featuredImage });
             await syncTaxonomiesToPost(post.id, selectedCats, selectedTags);
         } catch (e) {
             console.error("Error al guardar:", e);
         } finally {
             setIsSaving(false);
         }
-    }, [post.id, title, content, post.status, selectedCats, selectedTags]);
+    }, [post.id, title, content, post.status, selectedCats, selectedTags, seoTitle, seoDescription, featuredImage]);
+
+    const handleGenerateSEO = async () => {
+        setIsGeneratingSEO(true);
+        try {
+            // Pasamos el contenido serializado, la IA es buena entendiendo el JSON de BlockNote
+            const payload = typeof content === "string" ? content : JSON.stringify(content);
+            const seo = await generateSEO(payload);
+            setSeoTitle(seo.seoTitle);
+            setSeoDescription(seo.seoDescription);
+            toast.success("SEO generado con éxito");
+        } catch (e: any) {
+            toast.error(e.message || "Error al generar SEO");
+        } finally {
+            setIsGeneratingSEO(false);
+        }
+    };
+
+    const handleGenerateImage = async () => {
+        setIsGeneratingImage(true);
+        try {
+            const prompt = title || typeof content === "string" ? content.slice(0, 100) : "Imagen abstracta y moderna para un artículo de blog";
+            const imageUrl = await generateImage(prompt);
+            setFeaturedImage(imageUrl);
+            toast.success("Imagen generada con éxito");
+        } catch (e: any) {
+            toast.error(e.message || "Error al generar imagen");
+        } finally {
+            setIsGeneratingImage(false);
+        }
+    };
 
     // Autoguardado simple cada 5 segundos si ha habido cambios respecto a los props originales
     useEffect(() => {
@@ -178,6 +218,43 @@ export default function EditorForm({ post, allCategories, allTags }: { post: any
                         </div>
                     </div>
                 </div>
+
+                {/* Metabox: Imagen Destacada (IA) */}
+                <div className="bg-white border border-[#c3c4c7] shadow-sm">
+                    <h2 className="px-4 py-2.5 font-semibold text-sm border-b border-[#c3c4c7] text-[#1d2327]">Imagen Destacada</h2>
+                    <div className="p-4 text-[13px]">
+                        {featuredImage ? (
+                            <div className="mb-3 relative group">
+                                <img src={featuredImage} alt="Destacada" className="w-full aspect-video object-cover rounded-sm border" />
+                                <button onClick={() => setFeaturedImage("")} className="absolute top-2 right-2 bg-red-500 text-white rounded-sm px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">X</button>
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 italic mb-3">Sin imagen destacada.</p>
+                        )}
+                        <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !title} variant="outline" className="w-full h-8 text-[#2271b1] border-[#2271b1]">
+                            {isGeneratingImage ? "Generando con IA..." : "✨ Generar Imagen con IA"}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Metabox: SEO (IA) */}
+                <div className="bg-white border border-[#c3c4c7] shadow-sm">
+                    <h2 className="px-4 py-2.5 font-semibold text-sm border-b border-[#c3c4c7] text-[#1d2327]">Optimización SEO</h2>
+                    <div className="p-4 space-y-3 text-[13px]">
+                        <div>
+                            <label className="block text-gray-500 font-semibold mb-1">Título SEO</label>
+                            <Input value={seoTitle} onChange={e => setSeoTitle(e.target.value)} placeholder="Título SEO" className="h-8" />
+                        </div>
+                        <div>
+                            <label className="block text-gray-500 font-semibold mb-1">Descripción corta</label>
+                            <Textarea value={seoDescription} onChange={e => setSeoDescription(e.target.value)} placeholder="Añade una descripción meta..." className="min-h-[80px] text-xs p-2" />
+                        </div>
+                        <Button onClick={handleGenerateSEO} disabled={isGeneratingSEO} variant="outline" className="w-full h-8 text-[#2271b1] border-[#2271b1]">
+                            {isGeneratingSEO ? "Generando con IA..." : "✨ Auto-completar con IA"}
+                        </Button>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
