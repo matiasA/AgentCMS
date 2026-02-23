@@ -33,6 +33,19 @@ export async function updatePost(id: string, data: { title?: string; content?: s
         slug = slugify(data.title, { lower: true, strict: true }) + "-" + id.slice(-4);
     }
 
+    // Save previous state as a revision
+    const existingPost = await prisma.post.findUnique({ where: { id } });
+    if (existingPost && existingPost.content) {
+        // Simple logic for revisions to limit them or just fire and forget creation
+        await prisma.postRevision.create({
+            data: {
+                postId: existingPost.id,
+                title: existingPost.title,
+                content: existingPost.content,
+            }
+        }).catch(() => { });
+    }
+
     const updated = await prisma.post.update({
         where: { id },
         data: {

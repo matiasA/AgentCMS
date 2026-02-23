@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/admin/sidebar/Sidebar";
 import { AdminHeader } from "@/components/admin/header/AdminHeader";
+import { CommandPalette } from "@/components/admin/CommandPalette";
 
 export default function AdminLayout({
     children,
@@ -8,6 +9,7 @@ export default function AdminLayout({
 }) {
     return (
         <div className="flex h-screen bg-[#f1f1f1] font-sans">
+            <CommandPalette />
             <Sidebar />
             <div className="flex flex-col flex-1 min-w-0">
                 <AdminHeader />

@@ -19,6 +19,12 @@ export function AdminHeader() {
                     </div>
                 </div>
             </div>
+            <div className="flex items-center gap-x-6 text-xs mx-auto mr-10 hidden md:flex">
+                <div className="bg-[#2c3338] rounded-md px-3 py-1 text-gray-400 flex items-center gap-3 border border-transparent hover:border-gray-500 cursor-text">
+                    <span>Buscar (Cmd+K)</span>
+                    <span className="text-[10px] font-mono border border-gray-500 rounded px-1 opacity-70">⌘K</span>
+                </div>
+            </div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
                 <div className="flex items-center gap-x-4 text-xs">
                     <span className="hidden lg:flex text-[#c3c4c7] hover:text-[#72aee6] cursor-pointer">Hola, Admin</span>

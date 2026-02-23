@@ -133,6 +133,11 @@ export default function EditorForm({ post, allCategories, allTags }: { post: any
                             <p className="flex items-center gap-2">
                                 <span>📅</span> Publicar: <strong>Inmediatamente</strong>
                             </p>
+                            {post.id && !post.slug?.startsWith('borrador-') && (
+                                <p className="flex items-center gap-2">
+                                    <span>⏳</span> Revisiones: <a href={`/wp-admin/posts/${post.id}/revisions`} className="text-[#2271b1] hover:underline cursor-pointer">Ver historial</a>
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="bg-[#f6f7f7] border-t border-[#c3c4c7] p-3 flex justify-between items-center">
