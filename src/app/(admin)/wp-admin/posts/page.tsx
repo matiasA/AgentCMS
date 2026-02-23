@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+export const dynamic = "force-dynamic";
+
 export default async function PostsPage() {
     const posts = await prisma.post.findMany({
         orderBy: { createdAt: "desc" },

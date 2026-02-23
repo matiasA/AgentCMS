@@ -3,6 +3,7 @@
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
+import { uploadFiles } from "@/lib/uploadthing";
 import { useEffect, useState } from "react";
 
 interface EditorProps {
