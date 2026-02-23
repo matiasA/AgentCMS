@@ -47,12 +47,12 @@ Despídete de los bloqueos creativos y de las tareas repetitivas de SEO:
 
 | Escritorio Administrativo | Editor basado en Bloques con IA |
 | :---: | :---: |
-| <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800" alt="Dashboard" width="100%"/> | <img src="https://images.unsplash.com/photo-1618788372246-ce5f4f18b5ce?auto=format&fit=crop&q=80&w=800" alt="Editor" width="100%"/> |
+| <img src="./public/dashboard.png" alt="Dashboard" width="100%"/> | <img src="./public/editor.png" alt="Editor" width="100%"/> |
 | *Diseño familiar y responsivo para el administrador.* | *Integración con GPT-4o-mini y BlockNote.* |
 
 | Sitio Público Rápido (SSR) | Panel de ajustes globales |
 | :---: | :---: |
-| <img src="https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&q=80&w=800" alt="Frontend" width="100%"/> | <img src="https://images.unsplash.com/photo-1555421689-d68471e189f2?auto=format&fit=crop&q=80&w=800" alt="Ajustes" width="100%"/> |
+| <img src="./public/frontend.png" alt="Frontend" width="100%"/> | <img src="./public/settings.png" alt="Ajustes" width="100%"/> |
 | *Homepage optimizada construida en layout dinámico.* | *Personalización rápida.* |
 
 > *Nota: Sustituye estas imágenes temporales con capturas reales cuando tu sitio esté desplegado.*
