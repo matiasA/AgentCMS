@@ -4,13 +4,8 @@ import { Metadata } from "next";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import DynamicViewer from "@/components/public/DynamicViewer";
 import PublicCommentSection from "@/components/public/PublicCommentSection";
-
-const PublicBlockNoteViewer = dynamic(() => import("@/components/public/PublicBlockNoteViewer"), {
-    ssr: false,
-    loading: () => <div className="text-gray-500 py-10 animate-pulse bg-gray-100 rounded-md h-96 w-full"></div>
-});
 
 export const dynamicParams = true;
 
@@ -93,7 +88,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 </header>
 
                 <div className="prose prose-lg max-w-none prose-blue">
-                    <PublicBlockNoteViewer content={post.content as string} />
+                    <DynamicViewer content={post.content as string} />
                 </div>
 
                 {post.tags.length > 0 && (

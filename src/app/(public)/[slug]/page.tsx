@@ -1,12 +1,7 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import dynamic from "next/dynamic";
-
-const PublicBlockNoteViewer = dynamic(() => import("@/components/public/PublicBlockNoteViewer"), {
-    ssr: false,
-    loading: () => <div className="text-gray-500 py-10 animate-pulse bg-gray-100 rounded-md h-[600px] w-full"></div>
-});
+import DynamicViewer from "@/components/public/DynamicViewer";
 
 export const dynamicParams = true;
 
@@ -52,7 +47,7 @@ export default async function DynamicPageContent({ params }: { params: Promise<{
             </header>
 
             <div className="prose prose-lg max-w-none prose-blue">
-                <PublicBlockNoteViewer content={page.content as string} />
+                <DynamicViewer content={page.content as string} />
             </div>
         </article>
     );
